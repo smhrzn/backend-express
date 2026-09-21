@@ -10,6 +10,24 @@ app.use(express.json())
 app.use(express.static('public'))
 
 
+//connect to mongo db database
+const mongoose=require('mongoose')
+require('dotenv').config()
+
+//connection 
+const connectDB =async () =>{
+    try{
+        const conn = await mongoose.connect(process.env.MONGO_URI);
+        console.log("mongo db database connected successfully")
+    }
+    catch(error){
+        console.error("error while connecting ", error)
+        process.exit(1);
+    }
+}
+
+
+
 app.get('/', (req, res)=> {
     res.send('Hello, World !')
 }
@@ -50,3 +68,9 @@ app.post("/data", (req,res)=>{
 app.listen (port ,() =>{
     console.log('Example app listening on port ${post}')
 })
+
+connectDB().then()=>{
+    app.listen(port,() =>{
+        
+    })
+}
