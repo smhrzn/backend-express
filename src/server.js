@@ -367,9 +367,21 @@ app.patch('/update/User', async (req, res, next) => {
     }
 });
 
-app.get('/me',authenticationToken, async (req, res)=>{
-    const user= await User.findByID
+//make /me for authentication
+app.get('/me',authenticateToken, async(req, res)=>{
+    const user = await User.findById(req.suth.userID).select('password')
+
+    if(!user){
+        return res.status(401).json({
+            message:'user no longer exists'
+        })
+    }
+    res.status(200).json({
+        success:true,
+        user
+    })
 })
+
 
 
 // PUT - update User
