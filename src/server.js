@@ -14,16 +14,16 @@
 // const mongoose=require('mongoose')
 // require('dotenv').config()
 
-// //importing user schema
+// //importing User schema
 // const User = require('./models/User')
 // //make a route
-// app.post('/create/user',async (req, res , next)=>{
+// app.post('/create/User',async (req, res , next)=>{
 //     try{
-//         //create user
-//         const user = await user.create(req.body);
+//         //create User
+//         const User = await User.create(req.body);
 //         res.status(201).json({
 //             "success":true,
-//             data:user
+//             data:User
 //         })
 //     }
 //     catch(error)
@@ -37,13 +37,13 @@
 // })
 
 // //read
-// app.get('/read/user',async (req, res , next)=>{
+// app.get('/read/User',async (req, res , next)=>{
 //     try{
-//         //create user
-//         const user = await user.find();
+//         //create User
+//         const User = await User.find();
 //         res.status(201).json({
 //             "success":true,
-//             data:user
+//             data:User
 //         })
 //     }
 //     catch(error)
@@ -57,14 +57,14 @@
 // })
 
 // // delete
-// app.delete('/delete/user/',async (req,res,next)=>{
+// app.delete('/delete/User/',async (req,res,next)=>{
 //     try{
-//         // read a user
+//         // read a User
 //         console.log(req.query.id)
-//         const user=await user.findByIdAndDelete(req.query.id); //delete user in database
+//         const User=await User.findByIdAndDelete(req.query.id); //delete User in database
 //         res.status(201).json({
 //             "success":true,
-//             data:user
+//             data:User
 //         })
 //     }
 //     catch (error) {
@@ -161,16 +161,16 @@ const mongoose=require('mongoose')
 require('dotenv').config()
 
 
-// importing user schema
-const User=require('./models/user')
+// importing User schema
+const User=require('./models/User')
 // make a route
-app.post('/create/user',async (req,res,next)=>{
+app.post('/create/User',async (req,res,next)=>{
     try{
-        // create a user
-        const user=await User.create(req.body)
+        // create a User
+        const User=await User.create(req.body)
         res.status(201).json({
             "success":true,
-            data:user
+            data:User
         })
     }
     catch (error) {
@@ -182,13 +182,13 @@ app.post('/create/user',async (req,res,next)=>{
 }) 
 
 // read 
-app.get('/read/user',async (req,res,next)=>{
+app.get('/read/User',async (req,res,next)=>{
     try{
-        // read a user
-        const user=await User.find(); //find users in database
+        // read a User
+        const User=await User.find(); //find Users in database
         res.status(201).json({
             "success":true,
-            data:user
+            data:User
         })
     }
     catch (error) {
@@ -200,23 +200,112 @@ app.get('/read/user',async (req,res,next)=>{
 }) 
 
 // delete
-app.delete('/delete/user/',async (req,res,next)=>{
+app.delete('/delete/User/',async (req,res,next)=>{
     try{
-        // read a user
-        console.log(req.query.id)
-        const user=await User.findByIdAndDelete(req.query.id); //delete user in database
-        res.status(201).json({
-            "success":true,
-            data:user
-        })
-    }
-    catch (error) {
-        res.status(500).json({
-            "success":false,
-            "error":error.message
+        //password check
+        //get password
+        const password =req.query.password;
+        //get the requesting User infprmation
+        const User =await  User.findById(req.query.id)
+
+        if( User.password == password){
+            console.log("password matched")
+            return res.status(200).json({
+                "message": "password matched"
             })
+        }
+        else{
+            console.log("Password not matched")
+            return res.status(403).json({
+                "message": "password not matched"
+            })
+        }
+    //     // read a User
+    //     console.log(req.query.id)
+    //     const User=await User.findByIdAndUpdate(req.query.id); //delete User in database
+    //     res.status(201).json({
+    //         "success":true,
+    //         data:User
+    //     })
+    // }
+    // catch (error) {
+    //     res.status(500).json({
+    //         "success":false,
+    //         "error":error.message
+    //     })
     }
 }) 
+
+// // patch
+// app.patch('/patch/User/',async (req,res,next)=>{
+//     try{
+//         // read a User
+//         console.log(req.query.id)
+//         const User=await User.findByIdAndDelete(req.query.id); //delete User in database
+//         res.status(201).json({
+//             "success":true,
+//             data:User
+//         })
+//     }
+//     catch (error) {
+//         res.status(500).json({
+//             "success":false,
+//             "error":error.message
+//             })
+//     }
+// }) 
+
+
+// PATCH - update User
+app.patch('/update/User', async (req, res, next) => {
+    try {
+        console.log(req.query.id);
+
+        const User = await User.findByIdAndUpdate(
+            req.query.id,
+            req.body,
+            { new: true }
+        );
+
+        res.status(200).json({
+            "success": true,
+            data: User
+        });
+    }
+    catch(error)
+    {
+        res.status(400).json({
+            "success": false,
+            "error": error.message
+        });
+    }
+});
+
+// PUT - update User
+app.put('/update/User', async (req, res, next) => {
+    try {
+        console.log(req.query.id);
+
+        const User = await User.findByIdAndUpdate(
+            req.query.id,
+            req.body,
+            { new: true }
+        );
+
+        res.status(200).json({
+            "success": true,
+            data: User
+        });
+    }
+    catch(error)
+    {
+        res.status(400).json({
+            "success": false,
+            "error": error.message
+        });
+    }
+});
+
 
 // connection 
 const connectDB=async()=>{

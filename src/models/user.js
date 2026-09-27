@@ -1,7 +1,7 @@
-// //src/models/user.js
+// //src/models/User.js
 // const mongoose = require('mongoose');
 
-// const userSchema = new mongoose.Schema({
+// const UserSchema = new mongoose.Schema({
 //     name:{ type: String, required:true},
 //     email:{type: String, required :true, unique:true},
 //     age: {type :Number}
@@ -9,16 +9,17 @@
 
 
 
-// const User = mongoose.model('user', userSchema);
-// module.exports = user;
+// const User = mongoose.model('User', UserSchema);
+// module.exports = User;
 // src/models/User.js
 const mongoose = require('mongoose');
 
-const userSchema = new mongoose. Schema ( {
+const UserSchema = new mongoose. Schema ( {
 name: { type: String, required: true },
 email: { type: String, required: true, unique: true }, 
-age: { type: Number }
+age: { type: Number },
+password: {type: String , required : true}
 }, {timestamps: true }); //Automatically adds createdAt and updatedAt
 
-const User = mongoose. model ('User', userSchema) ;
+const User = mongoose. model ('User', UserSchema) ;
 module.exports = User;
