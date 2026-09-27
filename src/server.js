@@ -151,26 +151,103 @@ const one=require('./middleware/one')
 const two=require('./middleware/two')
 const three=require('./middleware/three')
 const app = express()
+const cookieparser = require ('cookie-parser');
+app.use(cookieparser());
 // sepecify the format will be in json
 app.use(express.json())
 app.use(express.static('public'))
 const port = 3000
 
-// connect the mongo db database
-const mongoose=require('mongoose')
+//for using token 
+const jwt = require('jsonwebtoken')
 require('dotenv').config()
 
-
-// importing User schema
+// connect the mongo db database
+const mongoose=require('mongoose')
 const User=require('./models/User')
+
+app.use(logger);
+
+/* Previous implementation kept for reference:
+// require('dotenv').config()
+// const User=require('./models/User')
+// const User=await User.create(req.body)
+// data:User
+// const User=await User.find()
+// res.status(201).json({
+//     "success":true,
+//     data:User
+// })
+// const User = await User.findById(req.query.id)
+// if (User.password == password) {
+//     return res.status(200).json({ "message": "password matched" })
+// }
+// const user=await User.findByIdAndUpdate(req.query.id)
+// const User = await User.findByIdAndUpdate(req.query.id, req.body, { new: true })
+// app.use(logger)
+*/
+
+
+//login api
+app.post('/login', async(req,res,next)=>{
+    try{
+        console.log("Login api called")
+        const{email, password} = req.body
+
+        if (!email || !password){
+            return res.status(400).json({
+                message: 'Email and password are required'
+            })
+        }
+        const user = await User.findOne({email})
+
+        if(!user || user.password !==password){
+            return res.status(401).json({
+                message: 'Invalid email or password'
+            })
+        }
+        //issue token by backend
+        const token = jwt.sign(
+            { userId: user._id.toString(), email:user.email},
+            process.env.JWT_SECRET,
+            {expiresIn:'1h'}
+        )
+        //save token in cookie in frontend
+        res.cookie('token', token, {
+            httpOnly:true,
+            secure:process.env.NODE_ENV === 'production',
+            sameSite : 'lax',
+            maxAge: 60*60*1000
+        })
+
+        return res.status(200).json({
+            success:true,
+            message:'login successful',
+            token,
+            user:{
+                id:user._id,
+                name:user.name,
+                email:user.email,
+                age:user.age
+            }
+        })
+    }catch(error){
+        res.status(500).json({
+            "message":error.message
+        })
+    }
+})
+
+
+
 // make a route
 app.post('/create/User',async (req,res,next)=>{
     try{
         // create a User
-        const User=await User.create(req.body)
+        const user=await User.create(req.body)
         res.status(201).json({
             "success":true,
-            data:User
+            data:user
         })
     }
     catch (error) {
@@ -185,10 +262,10 @@ app.post('/create/User',async (req,res,next)=>{
 app.get('/read/User',async (req,res,next)=>{
     try{
         // read a User
-        const User=await User.find(); //find Users in database
-        res.status(201).json({
+        const users=await User.find(); //find Users in database
+        res.status(200).json({
             "success":true,
-            data:User
+            data:users
         })
     }
     catch (error) {
@@ -206,33 +283,35 @@ app.delete('/delete/User/',async (req,res,next)=>{
         //get password
         const password =req.query.password;
         //get the requesting User infprmation
-        const User =await  User.findById(req.query.id)
+        const user = await User.findById(req.query.id)
 
-        if( User.password == password){
+        if (!user) {
+            return res.status(404).json({
+                "success": false,
+                "message": "User not found"
+            })
+        }
+
+        if (user.password === password) {
             console.log("password matched")
+            const deletedUser = await User.findByIdAndDelete(req.query.id)
             return res.status(200).json({
-                "message": "password matched"
+                "success": true,
+                "data": deletedUser
             })
         }
-        else{
-            console.log("Password not matched")
-            return res.status(403).json({
-                "message": "password not matched"
-            })
-        }
-    //     // read a User
-    //     console.log(req.query.id)
-    //     const User=await User.findByIdAndUpdate(req.query.id); //delete User in database
-    //     res.status(201).json({
-    //         "success":true,
-    //         data:User
-    //     })
-    // }
-    // catch (error) {
-    //     res.status(500).json({
-    //         "success":false,
-    //         "error":error.message
-    //     })
+
+        console.log("Password not matched")
+        return res.status(403).json({
+            "success": false,
+            "message": "password not matched"
+        })
+    }
+    catch (error) {
+        res.status(500).json({
+            "success":false,
+            "error":error.message
+        })
     }
 }) 
 
@@ -261,15 +340,22 @@ app.patch('/update/User', async (req, res, next) => {
     try {
         console.log(req.query.id);
 
-        const User = await User.findByIdAndUpdate(
+        const user = await User.findByIdAndUpdate(
             req.query.id,
             req.body,
-            { new: true }
+            { new: true, runValidators: true }
         );
+
+        if (!user) {
+            return res.status(404).json({
+                "success": false,
+                "error": "User not found"
+            });
+        }
 
         res.status(200).json({
             "success": true,
-            data: User
+            data: user
         });
     }
     catch(error)
@@ -281,20 +367,32 @@ app.patch('/update/User', async (req, res, next) => {
     }
 });
 
+app.get('/me',authenticationToken, async (req, res)=>{
+    const user= await User.findByID
+})
+
+
 // PUT - update User
 app.put('/update/User', async (req, res, next) => {
     try {
         console.log(req.query.id);
 
-        const User = await User.findByIdAndUpdate(
+        const user = await User.findByIdAndUpdate(
             req.query.id,
             req.body,
-            { new: true }
+            { new: true, runValidators: true, overwrite: true }
         );
+
+        if (!user) {
+            return res.status(404).json({
+                "success": false,
+                "error": "User not found"
+            });
+        }
 
         res.status(200).json({
             "success": true,
-            data: User
+            data: user
         });
     }
     catch(error)
@@ -329,9 +427,6 @@ const connectDB=async()=>{
 //     // rather than giving response
 //     next();
 // }
-// for calling middleware we use app.use
-app.use(logger); 
-
 // export default logger;
 
 app.get('/',one,two,three, (req, res) => {
